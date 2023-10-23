@@ -1,7 +1,6 @@
 import React from "react";
 import { InputFile } from "./InputFile";
-import { Waveform } from "./Waveform";
-import { Pitch } from "./Pitch";
+import { PitchEditor } from "./PitchEditor";
 
 export function App() {
   const [audioBuffer, setAudioBuffer] = React.useState<AudioBuffer | null>(
@@ -12,7 +11,7 @@ export function App() {
     <>
       {audioBuffer ? (
         <>
-          <Waveform buffer={audioBuffer} width={1200} />
+          <PitchEditor buffer={audioBuffer} width={1200} />
         </>
       ) : (
         <InputFile onAudioBuffer={setAudioBuffer} />
