@@ -1,4 +1,5 @@
 import React from "react";
+import { applyPitches } from "./use-split-audio";
 
 export function InputFile({
   onAudioBuffer,
@@ -13,7 +14,12 @@ export function InputFile({
       return;
     }
 
-    onAudioBuffer(await fileToAudioBuffer(file));
+    const audioBuffer = await fileToAudioBuffer(file);
+    const audioBufferDelayedUglyHackFix = await applyPitches([], audioBuffer);
+    (audioBuffer as any).___audioBufferDelayedUglyHackFix =
+      audioBufferDelayedUglyHackFix; // Pitch shifting introduces delay and I'm too tired to fix it properly rn
+    // TODO: fix this 👆
+    onAudioBuffer(audioBuffer);
   };
 
   return <input type="file" onChange={onAudioFileChange} />;

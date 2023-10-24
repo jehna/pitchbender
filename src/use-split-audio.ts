@@ -67,13 +67,13 @@ function initializeState(audioBuffer: AudioBuffer): State {
   const DEFAULT_TEMPO = 120;
   const DEFAULT_QUANTIZATION = 10;
   const initialPitchData = toPitch(
-    audioBuffer,
+    (audioBuffer as any).___audioBufferDelayedUglyHackFix,
     DEFAULT_TEMPO,
     DEFAULT_QUANTIZATION
   );
   const notes = splitToNotes(
     initialPitchData,
-    audioBuffer,
+    (audioBuffer as any).___audioBufferDelayedUglyHackFix,
     audioBuffer.length,
     DEFAULT_QUANTIZATION,
     DEFAULT_TEMPO
@@ -89,7 +89,7 @@ function initializeState(audioBuffer: AudioBuffer): State {
       id: i,
     })),
     pitchData: initialPitchData,
-    audioBuffer,
+    audioBuffer: (audioBuffer as any).___audioBufferDelayedUglyHackFix,
     initialAudioBuffer: audioBuffer,
     tempo: DEFAULT_TEMPO,
     quantization: DEFAULT_QUANTIZATION,
@@ -106,7 +106,7 @@ function useSideEffect(fn: () => void, deps: any[]) {
 const shallowEqual = (a: any[], b: any[]) =>
   a.length === b.length && a.every((v, i) => v === b[i]);
 
-async function applyPitches(
+export async function applyPitches(
   clips: Clip[],
   audioBuffer: AudioBuffer
 ): Promise<AudioBuffer> {
@@ -123,7 +123,7 @@ async function applyPitches(
       player.start();
     },
     audioBuffer.duration,
-    2,
+    1,
     audioBuffer.sampleRate
   );
   return (result as any)._buffer;
