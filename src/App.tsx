@@ -11,9 +11,7 @@ export function App() {
   return (
     <>
       {audioBuffer ? (
-        <>
-          <PitchEditor initialBuffer={audioBuffer} width={1200} />
-        </>
+        <PitchEditor initialBuffer={audioBuffer} width={1200} />
       ) : (
         <InputFile onAudioBuffer={setAudioBuffer} />
       )}
