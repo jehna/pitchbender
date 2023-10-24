@@ -26,10 +26,14 @@ export function PitchEditor({
   playing: boolean;
   audioContext: AudioContext;
 }) {
-  const pitchData = useMemo(() => toPitch(buffer), [buffer]);
+  const audioBuffLength = useMemo(() => findBufferLength(buffer), [buffer]);
+  const pitchData = useMemo(
+    () => toPitch(buffer, audioBuffLength).map((v) => (v === -1 ? 1 : v)),
+    [buffer]
+  );
   const splitAudioData = useMemo(
-    () => splitToNotes(pitchData, buffer),
-    [pitchData, buffer]
+    () => splitToNotes(pitchData, buffer, audioBuffLength),
+    [pitchData, buffer, audioBuffLength]
   );
   const audioDataExtent = d3.extent(buffer.getChannelData(0)) as [
     number,
@@ -40,7 +44,7 @@ export function PitchEditor({
     [marginLeft, width - marginRight]
   );
   const xAudioData = d3.scaleLinear(
-    [0, buffer.length - 1],
+    [0, audioBuffLength - 1],
     [marginLeft, width - marginRight]
   );
   const FROM = "G2" as const;
@@ -50,7 +54,6 @@ export function PitchEditor({
     [height - marginBottom, marginTop]
   );
   const line = d3.line((d, i) => xPitch(i), y).curve(d3.curveBumpX);
-
   return (
     <svg width={width} height={height}>
       {splitAudioData.map(({ note, data, start }, i) => (
@@ -141,13 +144,22 @@ export function PitchEditor({
   );
 }
 
-function toPitch(data: AudioBuffer): number[] {
+function toPitch(data: AudioBuffer, audioBuffLength: number): number[] {
   return Pitchfinder.frequencies(
     [Pitchfinder.ACF2PLUS(), Pitchfinder.AMDF()],
-    data.getChannelData(0),
+    data.getChannelData(0).slice(0, audioBuffLength),
     {
       tempo: 130, // in BPM, defaults to 120
       quantization: 10, // samples per beat, defaults to 4 (i.e. 16th notes)
     }
   ) as number[];
+}
+
+function findBufferLength(buffer: AudioBuffer): number {
+  let length = buffer.length - 1;
+  let data = buffer.getChannelData(0);
+  while (data[length] === 0) {
+    length--;
+  }
+  return length + 1;
 }

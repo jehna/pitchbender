@@ -141,7 +141,8 @@ export const notesBetween = (from: Key, to: Key) => {
 
 export function splitToNotes(
   pitchData: number[],
-  buffer: AudioBuffer
+  buffer: AudioBuffer,
+  audioBuffLength: number
 ): { note: Note; data: Float32Array; start: number }[] {
   const rawAudioData = buffer.getChannelData(0);
   let currNote = freqToNote(pitchData[0]);
@@ -151,9 +152,7 @@ export function splitToNotes(
     const freq = pitchData[i];
     if (freq <= currNote.freqTo && freq >= currNote.freqFrom) continue;
 
-    const prevPos = Math.floor(
-      ((i - 1) / pitchData.length) * rawAudioData.length
-    );
+    const prevPos = Math.floor(((i - 1) / pitchData.length) * audioBuffLength);
 
     notes.push({
       note: currNote,
@@ -165,7 +164,7 @@ export function splitToNotes(
   }
   notes.push({
     note: currNote,
-    data: rawAudioData.slice(audioDataPointer),
+    data: rawAudioData.slice(audioDataPointer, audioBuffLength),
     start: audioDataPointer,
   });
 
