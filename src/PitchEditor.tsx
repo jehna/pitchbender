@@ -80,7 +80,7 @@ export function PitchEditor({
     <>
       <svg width={width} height={height}>
         {state.clips.map(
-          ({ note, data, startTime, transposed, id, endTime }) => (
+          ({ note, data, startTime, transposed, id, endTime }, i) => (
             <React.Fragment key={id}>
               <rect
                 x={x(startTime)}
@@ -91,12 +91,36 @@ export function PitchEditor({
                 width={x(endTime) - x(startTime)}
                 height={y(note.freqFrom) - y(note.freqTo)}
                 fill="#FFE0F7"
+                tabIndex={i}
+                onKeyUp={(e) => {
+                  switch (e.key) {
+                    case "ArrowUp":
+                      dispatch({
+                        type: "transpose",
+                        id,
+                        amount: e.shiftKey
+                          ? transposed + 0.1
+                          : Math.ceil(transposed + 0.1),
+                      });
+                      break;
+                    case "ArrowDown":
+                      dispatch({
+                        type: "transpose",
+                        id,
+                        amount: e.shiftKey
+                          ? transposed - 0.1
+                          : Math.floor(transposed - 0.1),
+                      });
+                      break;
+                  }
+                }}
               />
               <g
                 transform={`translate(${x(startTime)}, ${
                   y(note.freqTo) -
                   (y(note.freqFrom) - y(note.freqTo)) * transposed
                 } )`}
+                style={{ pointerEvents: "none" }}
               >
                 <Waveform
                   data={data}
