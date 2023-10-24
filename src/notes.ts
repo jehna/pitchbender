@@ -1,3 +1,5 @@
+import { PitchNote } from "./pitch-detect";
+
 const notes = {
   C0: 16.35,
   "C#0": 17.32,
@@ -110,7 +112,7 @@ const notes = {
 } as const;
 
 type Key = keyof typeof notes;
-type Note = {
+export type Note = {
   note: string;
   frequency: number;
   freqFrom: number;
@@ -139,34 +141,53 @@ export const notesBetween = (from: Key, to: Key) => {
   return noteFreqs.slice(fromIndex, toIndex + 1);
 };
 
-export function splitToNotes(
-  pitchData: number[],
-  buffer: AudioBuffer,
-  audioBuffLength: number
-): { note: Note; data: Float32Array; start: number }[] {
-  const rawAudioData = buffer.getChannelData(0);
-  let currNote = freqToNote(pitchData[0]);
-  let audioDataPointer = 0;
-  let notes: { note: Note; data: Float32Array; start: number }[] = [];
-  for (let i = 0; i < pitchData.length; i++) {
-    const freq = pitchData[i];
-    if (freq <= currNote.freqTo && freq >= currNote.freqFrom) continue;
+export type NoteData = {
+  note: Note;
+  data: Float32Array;
+  startTime: number;
+  endTime: number;
+};
 
-    const prevPos = Math.floor(((i - 1) / pitchData.length) * audioBuffLength);
+export function splitToNotes(
+  pitchData: PitchNote[],
+  buffer: AudioBuffer,
+  audioBuffLength: number,
+  quantization: number,
+  tempo: number
+): NoteData[] {
+  const rawAudioData = buffer.getChannelData(0);
+  let notes: NoteData[] = [];
+  const chunkSize = Math.round(
+    (buffer.sampleRate * 60) / (quantization * tempo)
+  );
+  const numChunks = Math.floor(audioBuffLength / chunkSize);
+  if (numChunks !== pitchData.length) throw new Error("Universe did not align");
+
+  let blockStartIndex = 0;
+  for (let i = 0; i < pitchData.length - 1; i++) {
+    const curr = pitchData[i];
+    const next = pitchData[i + 1];
+    const currNote = freqToNote(curr.frequency);
+    if (
+      next.frequency <= currNote.freqTo &&
+      next.frequency >= currNote.freqFrom
+    )
+      continue;
+
+    const startBlock = pitchData[blockStartIndex];
+    const chunk = rawAudioData.slice(
+      blockStartIndex * chunkSize,
+      (i + 1) * chunkSize
+    );
 
     notes.push({
       note: currNote,
-      data: rawAudioData.slice(audioDataPointer, prevPos),
-      start: audioDataPointer,
+      data: chunk,
+      startTime: startBlock.startTime,
+      endTime: curr.endTime,
     });
-    audioDataPointer = prevPos;
-    currNote = freqToNote(freq);
+    blockStartIndex = i + 1;
   }
-  notes.push({
-    note: currNote,
-    data: rawAudioData.slice(audioDataPointer, audioBuffLength),
-    start: audioDataPointer,
-  });
 
   return notes;
 }

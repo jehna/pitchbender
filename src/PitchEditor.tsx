@@ -1,9 +1,10 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useMemo } from "react";
 import * as d3 from "d3";
-import Pitchfinder from "pitchfinder";
-import { noteToFreq, notesBetween, splitToNotes } from "./notes";
+import { noteToFreq, notesBetween } from "./notes";
 import { Waveform } from "./Waveform";
 import { Seeker } from "./Seeker";
+import { useSplitAudio } from "./use-split-audio";
+import { PitchNote } from "./pitch-detect";
 
 export function PitchEditor({
   width = 640,
@@ -12,39 +13,24 @@ export function PitchEditor({
   marginRight = 20,
   marginBottom = 20,
   marginLeft = 50,
-  buffer,
-  playing,
-  audioContext,
+  initialBuffer,
 }: {
-  buffer: AudioBuffer;
+  initialBuffer: AudioBuffer;
   width?: number;
   height?: number;
   marginTop?: number;
   marginRight?: number;
   marginBottom?: number;
   marginLeft?: number;
-  playing: boolean;
-  audioContext: AudioContext;
 }) {
-  const audioBuffLength = useMemo(() => findBufferLength(buffer), [buffer]);
-  const pitchData = useMemo(
-    () => toPitch(buffer, audioBuffLength).map((v) => (v === -1 ? 1 : v)),
-    [buffer]
-  );
-  const splitAudioData = useMemo(
-    () => splitToNotes(pitchData, buffer, audioBuffLength),
-    [pitchData, buffer, audioBuffLength]
-  );
-  const audioDataExtent = d3.extent(buffer.getChannelData(0)) as [
+  const { state, dispatch } = useSplitAudio(initialBuffer);
+  (window as any).dispath = dispatch;
+  const audioDataExtent = d3.extent(state.audioBuffer.getChannelData(0)) as [
     number,
     number
   ];
-  const xPitch = d3.scaleLinear(
-    [0, pitchData.length + 1],
-    [marginLeft, width - marginRight]
-  );
-  const xAudioData = d3.scaleLinear(
-    [0, audioBuffLength - 1],
+  const x = d3.scaleLinear(
+    [0, initialBuffer.duration],
     [marginLeft, width - marginRight]
   );
   const FROM = "G2" as const;
@@ -53,22 +39,33 @@ export function PitchEditor({
     [noteToFreq(FROM), noteToFreq(TO)],
     [height - marginBottom, marginTop]
   );
-  const line = d3.line((d, i) => xPitch(i), y).curve(d3.curveBumpX);
+  const line = d3
+    .line<PitchNote>(
+      (data) => x((data.startTime + data.endTime) / 2),
+      (data) => y(data.frequency)
+    )
+    .curve(d3.curveBumpX);
   return (
     <svg width={width} height={height}>
-      {splitAudioData.map(({ note, data, start }, i) => (
-        <React.Fragment key={i}>
+      {state.clips.map(({ note, data, startTime, transposed, id, endTime }) => (
+        <React.Fragment key={id}>
           <rect
-            x={xAudioData(start)}
-            y={y(note.freqTo)}
-            width={xAudioData(start + data.length) - xAudioData(start)}
+            x={x(startTime)}
+            y={
+              y(note.freqTo) - (y(note.freqFrom) - y(note.freqTo)) * transposed
+            }
+            width={x(endTime) - x(startTime)}
             height={y(note.freqFrom) - y(note.freqTo)}
             fill="#FFE0F7"
           />
-          <g transform={`translate(${xAudioData(start)}, ${y(note.freqTo)})`}>
+          <g
+            transform={`translate(${x(startTime)}, ${
+              y(note.freqTo) - (y(note.freqFrom) - y(note.freqTo)) * transposed
+            } )`}
+          >
             <Waveform
               data={data}
-              width={xAudioData(start + data.length) - xAudioData(start)}
+              width={x(endTime) - x(startTime)}
               height={y(note.freqFrom) - y(note.freqTo)}
               marginTop={0}
               marginRight={0}
@@ -86,9 +83,9 @@ export function PitchEditor({
         y2={height - marginBottom}
         stroke="currentColor"
       />
-      <Seeker
-        buffer={buffer}
-        playing={playing}
+      {/* <Seeker
+        buffer={state.audioBuffer}
+        playing={false} // TODO
         marginTop={marginTop}
         height={height}
         marginBottom={marginBottom}
@@ -96,7 +93,7 @@ export function PitchEditor({
         marginRight={marginRight}
         width={width}
         audioContext={audioContext}
-      />
+      />*/}
       <line
         x1={marginLeft}
         x2={width - marginRight}
@@ -136,30 +133,10 @@ export function PitchEditor({
         fill="none"
         stroke="currentColor"
         strokeWidth="1.5"
-        d={line(pitchData)!}
+        d={line(state.pitchData)!}
         shapeRendering={"crispEdges"}
         color="red"
       />
     </svg>
   );
-}
-
-function toPitch(data: AudioBuffer, audioBuffLength: number): number[] {
-  return Pitchfinder.frequencies(
-    [Pitchfinder.ACF2PLUS(), Pitchfinder.AMDF()],
-    data.getChannelData(0).slice(0, audioBuffLength),
-    {
-      tempo: 130, // in BPM, defaults to 120
-      quantization: 10, // samples per beat, defaults to 4 (i.e. 16th notes)
-    }
-  ) as number[];
-}
-
-function findBufferLength(buffer: AudioBuffer): number {
-  let length = buffer.length - 1;
-  let data = buffer.getChannelData(0);
-  while (data[length] === 0) {
-    length--;
-  }
-  return length + 1;
 }
