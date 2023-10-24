@@ -6,6 +6,7 @@ import { Seeker } from "./Seeker";
 import { useSplitAudio } from "./use-split-audio";
 import { PitchNote } from "./pitch-detect";
 import { PlayButton } from "./PlayButton";
+import { DownloadButton } from "./DownloadButton";
 
 export function PitchEditor({
   width = 640,
@@ -199,6 +200,7 @@ export function PitchEditor({
         />
       </svg>
       <PlayButton onClick={() => setPlaying((p) => !p)} />
+      <DownloadButton audioBuffer={state.audioBuffer} />
     </>
   );
 }
