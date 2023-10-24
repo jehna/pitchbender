@@ -1,7 +1,9 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import * as d3 from "d3";
 import Pitchfinder from "pitchfinder";
-import { freqToNote, noteToFreq, notesBetween } from "./notes";
+import { noteToFreq, notesBetween, splitToNotes } from "./notes";
+import { Waveform } from "./Waveform";
+import { Seeker } from "./Seeker";
 
 export function PitchEditor({
   width = 640,
@@ -11,6 +13,8 @@ export function PitchEditor({
   marginBottom = 20,
   marginLeft = 50,
   buffer,
+  playing,
+  audioContext,
 }: {
   buffer: AudioBuffer;
   width?: number;
@@ -19,10 +23,24 @@ export function PitchEditor({
   marginRight?: number;
   marginBottom?: number;
   marginLeft?: number;
+  playing: boolean;
+  audioContext: AudioContext;
 }) {
-  const data = useMemo(() => toPitch(buffer), [buffer]);
-  const x = d3.scaleLinear(
-    [0, data.length - 1],
+  const pitchData = useMemo(() => toPitch(buffer), [buffer]);
+  const splitAudioData = useMemo(
+    () => splitToNotes(pitchData, buffer),
+    [pitchData, buffer]
+  );
+  const audioDataExtent = d3.extent(buffer.getChannelData(0)) as [
+    number,
+    number
+  ];
+  const xPitch = d3.scaleLinear(
+    [0, pitchData.length + 1],
+    [marginLeft, width - marginRight]
+  );
+  const xAudioData = d3.scaleLinear(
+    [0, buffer.length - 1],
     [marginLeft, width - marginRight]
   );
   const FROM = "G2" as const;
@@ -31,16 +49,50 @@ export function PitchEditor({
     [noteToFreq(FROM), noteToFreq(TO)],
     [height - marginBottom, marginTop]
   );
-  const line = d3.line((d, i) => x(i), y).curve(d3.curveCatmullRom.alpha(0.5));
+  const line = d3.line((d, i) => xPitch(i), y).curve(d3.curveBumpX);
 
   return (
     <svg width={width} height={height}>
+      {splitAudioData.map(({ note, data, start }, i) => (
+        <React.Fragment key={i}>
+          <rect
+            x={xAudioData(start)}
+            y={y(note.freqTo)}
+            width={xAudioData(start + data.length) - xAudioData(start)}
+            height={y(note.freqFrom) - y(note.freqTo)}
+            fill="#FFE0F7"
+          />
+          <g transform={`translate(${xAudioData(start)}, ${y(note.freqTo)})`}>
+            <Waveform
+              data={data}
+              width={xAudioData(start + data.length) - xAudioData(start)}
+              height={y(note.freqFrom) - y(note.freqTo)}
+              marginTop={0}
+              marginRight={0}
+              marginBottom={0}
+              marginLeft={0}
+              extent={audioDataExtent}
+            />
+          </g>
+        </React.Fragment>
+      ))}
       <line
         x1={marginLeft}
         x2={marginLeft}
         y1={marginTop}
         y2={height - marginBottom}
         stroke="currentColor"
+      />
+      <Seeker
+        buffer={buffer}
+        playing={playing}
+        marginTop={marginTop}
+        height={height}
+        marginBottom={marginBottom}
+        marginLeft={marginLeft}
+        marginRight={marginRight}
+        width={width}
+        audioContext={audioContext}
       />
       <line
         x1={marginLeft}
@@ -81,7 +133,7 @@ export function PitchEditor({
         fill="none"
         stroke="currentColor"
         strokeWidth="1.5"
-        d={line(data)!}
+        d={line(pitchData)!}
         shapeRendering={"crispEdges"}
         color="red"
       />
@@ -95,7 +147,7 @@ function toPitch(data: AudioBuffer): number[] {
     data.getChannelData(0),
     {
       tempo: 130, // in BPM, defaults to 120
-      quantization: 8, // samples per beat, defaults to 4 (i.e. 16th notes)
+      quantization: 10, // samples per beat, defaults to 4 (i.e. 16th notes)
     }
   ) as number[];
 }

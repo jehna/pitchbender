@@ -109,14 +109,15 @@ const notes = {
   B8: 7902.13,
 } as const;
 
-type Note = keyof typeof notes;
-
-const noteFreqs: {
+type Key = keyof typeof notes;
+type Note = {
   note: string;
   frequency: number;
   freqFrom: number;
   freqTo: number;
-}[] = Object.entries(notes)
+};
+
+const noteFreqs: Note[] = Object.entries(notes)
   .sort((a, b) => a[1] - b[1])
   .map(([note, frequency], i, all) => {
     const prevFreq = all[i - 1]?.[1] ?? all[0][1];
@@ -127,13 +128,46 @@ const noteFreqs: {
     return { note, frequency, freqFrom, freqTo };
   });
 
-export const freqToNote = (freq: number): string =>
-  noteFreqs.find(({ frequency }) => frequency >= freq)?.note ?? "";
+export const freqToNote = (freq: number) =>
+  noteFreqs.find(({ freqTo }) => freqTo >= freq)!;
 
-export const noteToFreq = (note: Note): number => notes[note];
+export const noteToFreq = (note: Key): number => notes[note];
 
-export const notesBetween = (from: Note, to: Note) => {
+export const notesBetween = (from: Key, to: Key) => {
   const fromIndex = noteFreqs.findIndex(({ note }) => note === from);
   const toIndex = noteFreqs.findIndex(({ note }) => note === to);
   return noteFreqs.slice(fromIndex, toIndex + 1);
 };
+
+export function splitToNotes(
+  pitchData: number[],
+  buffer: AudioBuffer
+): { note: Note; data: Float32Array; start: number }[] {
+  const rawAudioData = buffer.getChannelData(0);
+  let currNote = freqToNote(pitchData[0]);
+  let audioDataPointer = 0;
+  let notes: { note: Note; data: Float32Array; start: number }[] = [];
+  for (let i = 0; i < pitchData.length; i++) {
+    const freq = pitchData[i];
+    if (freq <= currNote.freqTo && freq >= currNote.freqFrom) continue;
+
+    const prevPos = Math.floor(
+      ((i - 1) / pitchData.length) * rawAudioData.length
+    );
+
+    notes.push({
+      note: currNote,
+      data: rawAudioData.slice(audioDataPointer, prevPos),
+      start: audioDataPointer,
+    });
+    audioDataPointer = prevPos;
+    currNote = freqToNote(freq);
+  }
+  notes.push({
+    note: currNote,
+    data: rawAudioData.slice(audioDataPointer),
+    start: audioDataPointer,
+  });
+
+  return notes;
+}
