@@ -46,7 +46,8 @@ push via Github Actions.
 This project is a PoC learning project with the following features:
 * Note based audio editing
 * Audio is automatically split to draggable boxes based on pitch
-* Pitch can be changed by selecting the box and pressing arrow keys, which shifts the box by a semitone
+* Pitch can be changed by selecting the box and pressing arrow keys, which
+  shifts the box by a semitone
   * Pressing shift will nudge the box by tenth of a semitone
 
 ## Contributing
@@ -57,3 +58,12 @@ branch. Pull requests are warmly welcome.
 ## Licensing
 
 The code in this project is licensed under MIT license.
+
+## Logo
+
+The logo was created using DALL·E 3 image generation AI with the following
+prompt:
+
+```
+a logo for a professional tool called "pitchbender" that helps music professionals tune and pitch shift tracks visually
+```
