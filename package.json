@@ -1,13 +1,13 @@
 {
   "name": "pitchbender",
   "version": "1.0.0",
-  "main": "index.js",
+  "source": "src/index.html",
   "author": "Jesse Luoto <jesse.luoto@gmail.com>",
   "license": "MIT",
   "devDependencies": {
     "@types/d3": "^7.4.2",
     "@types/react-dom": "^18.2.14",
-    "parcel": "^2.10.0",
+    "parcel": "^2.10.1",
     "process": "^0.11.10"
   },
   "dependencies": {
@@ -17,5 +17,13 @@
     "react-dom": "^18.2.0",
     "tone": "^14.7.77",
     "typescript": "^5.2.2"
+  },
+  "scripts": {
+    "start": "parcel src/index.html",
+    "build": "parcel build  --public-url /pitchbender/"
+  },
+  "alias": {
+    "//": "https://github.com/parcel-bundler/parcel/issues/8792",
+    "d3": "d3/dist/d3.js"
   }
 }
