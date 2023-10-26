@@ -191,3 +191,7 @@ export function splitToNotes(
 
   return notes;
 }
+
+export function noteDifferenceInSemotones(a: Note, b: Note) {
+  return Math.abs(noteFreqs.indexOf(a) - noteFreqs.indexOf(b));
+}

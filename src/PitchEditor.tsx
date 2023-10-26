@@ -1,6 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import * as d3 from "d3";
-import { noteToFreq, notesBetween } from "./notes";
+import {
+  freqToNote,
+  noteDifferenceInSemotones,
+  noteToFreq,
+  notesBetween,
+} from "./notes";
 import { Waveform } from "./Waveform";
 import { Seeker } from "./Seeker";
 import { useSplitAudio } from "./use-split-audio";
@@ -190,17 +195,39 @@ export function PitchEditor({
             </text>
           </g>
         ))}
-        <path
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          d={line(state.pitchData)!}
-          shapeRendering={"crispEdges"}
-          color="red"
-        />
+        {splitPitchData(state.pitchData).map((data) => (
+          <path
+            key={data[0].startTime}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            d={line(data)!}
+            shapeRendering={"crispEdges"}
+            color="red"
+          />
+        ))}
       </svg>
       <PlayButton onClick={() => setPlaying((p) => !p)} />
       <DownloadButton audioBuffer={state.audioBuffer} />
     </>
   );
+}
+
+function splitPitchData(pitchData: PitchNote[]): PitchNote[][] {
+  const separateLines: PitchNote[][] = [];
+  let currentLine: PitchNote[] = [];
+  let prevNote = freqToNote(pitchData[0].frequency);
+  for (const pitch of pitchData) {
+    const currentNote = freqToNote(pitch.frequency);
+    if (noteDifferenceInSemotones(currentNote, prevNote) > 2) {
+      separateLines.push(currentLine);
+      currentLine = [];
+    }
+    currentLine.push(pitch);
+    prevNote = currentNote;
+  }
+  if (currentLine.length > 0) {
+    separateLines.push(currentLine);
+  }
+  return separateLines;
 }
