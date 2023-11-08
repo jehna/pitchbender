@@ -5,7 +5,7 @@
   "author": "Jesse Luoto <jesse.luoto@gmail.com>",
   "license": "MIT",
   "devDependencies": {
-    "@types/d3": "^7.4.2",
+    "@types/d3": "^7.4.3",
     "@types/react-dom": "^18.2.14",
     "parcel": "^2.10.2",
     "process": "^0.11.10"
