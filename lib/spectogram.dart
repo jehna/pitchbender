@@ -15,6 +15,7 @@ class Spectogram extends StatefulWidget {
 
 class _SpectogramState extends State<Spectogram> {
   Float64List? wav;
+  double threshold = 100;
 
   @override
   void initState() {
@@ -37,12 +38,33 @@ class _SpectogramState extends State<Spectogram> {
   @override
   Widget build(BuildContext context) {
     final wav = this.wav;
-    return wav != null
-        ? CustomPaint(
-            painter: SpectogramPainer(wav: wav),
-            size: const Size(500, 300),
-          )
-        : const SizedBox();
+    final logarihmicallyRisingValue =
+        pow(threshold - 20, 5) / pow(1000 - 20, 5) * (1000 - 20) + 20;
+    return Column(children: [
+      Slider(
+        value: threshold,
+        min: 10,
+        max: 1000,
+        onChanged: (value) {
+          setState(() {
+            threshold = value;
+          });
+        },
+      ),
+      wav != null
+          ? Stack(children: [
+              CustomPaint(
+                painter: SpectogramPainer(wav: wav),
+                size: const Size(500, 300),
+              ),
+              CustomPaint(
+                painter: LinegramPainer(
+                    wav: wav, threshold: logarihmicallyRisingValue),
+                size: const Size(500, 300),
+              ),
+            ])
+          : const SizedBox()
+    ]);
   }
 }
 
@@ -59,7 +81,7 @@ class SpectogramPainer extends CustomPainter {
       Rect.fromLTWH(0, 0, size.width, size.height),
       Paint()..color = Colors.black,
     );
-
+    if (1 == 1) return;
     const chunkSize = 2048;
     final stft = STFT(chunkSize, Window.hanning(chunkSize));
     var chunkIndex = 0;
@@ -104,6 +126,125 @@ class SpectogramPainer extends CustomPainter {
   }
 }
 
+class LinegramPainer extends CustomPainter {
+  Float64List wav;
+  double threshold;
+  LinegramPainer({required this.wav, required this.threshold});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Mirror canvas horizontally
+    canvas.scale(1, -1);
+    canvas.translate(0, -size.height);
+
+    const chunkSize = 2048;
+    final stft = STFT(chunkSize, Window.hanning(chunkSize));
+    var chunkIndex = 0;
+    final chunkWidth = size.width / (wav.length / chunkSize);
+
+    List<List<int>> points = [];
+    stft.run(wav, (Float64x2List chunk) {
+      final data = chunk.discardConjugates().magnitudes();
+      points.add(groupByValues(data, threshold));
+    });
+
+    final hairs = pointsToHairs(points);
+    for (final hair in hairs) {
+      final path = Path();
+      if (hair.length == 1) continue;
+      path.moveTo(hair.first.x * chunkWidth,
+          log(hair.first.y) / log(41000) * size.height);
+      for (final point in hair) {
+        final x = point.x * chunkWidth;
+        final y =
+            log(point.y) / log(41000) * size.height + Random().nextDouble() * 0;
+        path.lineTo(x, y);
+      }
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = Colors.white30
+          ..strokeWidth = 1
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round
+          ..blendMode = BlendMode.plus
+          ..isAntiAlias = true,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(LinegramPainer oldDelegate) {
+    return wav != oldDelegate.wav;
+  }
+}
+
+List<int> groupByValues(Float64List data, double threshold) {
+  final result = <int>[];
+  var current = 0.0;
+  for (var i = 0; i < data.length; i++) {
+    current += data[i];
+    if (current > threshold) {
+      result.add(i);
+      current -= threshold;
+    }
+    if (current > threshold) {
+      result.add(i);
+      current -= threshold;
+    }
+    if (current > threshold) {
+      result.add(i);
+      current -= threshold;
+    }
+    if (current > threshold) {
+      result.add(i);
+      current -= threshold;
+    }
+  }
+  return result;
+}
+
+const MAX_DISTANCE_LOG_MULTIPLIER = 1.1;
+(int distance, List<Point<int>> connector, int connectee) EMPTY =
+    const (-1, [], -1);
+List<List<Point<int>>> pointsToHairs(List<List<int>> points) {
+  final result = points[0].map((v) => [Point(0, v)]).toList();
+
+  for (var currentIndex = 1; currentIndex < points.length; currentIndex++) {
+    //if (currentIndex > 58) break;
+
+    final connectors =
+        result.where((hair) => hair.last.x == currentIndex - 1).toList();
+    final connectees = [...points[currentIndex]];
+    while (connectees.isNotEmpty) {
+      var shortest = EMPTY;
+      for (final connector in connectors) {
+        for (final connectee in connectees) {
+          final distance = (connectee - connector.last.y).abs();
+          if ((shortest == EMPTY || distance < shortest.$1) &&
+              absLogMultiplier(connector.last.y, connectee) <
+                  MAX_DISTANCE_LOG_MULTIPLIER) {
+            shortest = (distance, connector, connectee);
+          }
+        }
+      }
+      if (shortest == EMPTY) {
+        for (final connectee in connectees) {
+          result.add([Point(currentIndex, connectee)]);
+        }
+        break;
+      }
+      shortest.$2.add(Point(currentIndex, shortest.$3));
+      connectors.remove(shortest.$2);
+      connectees.remove(shortest.$3);
+    }
+  }
+  return result;
+}
+
+double absLogMultiplier(int a, int b) =>
+    log(a) / log(b) > log(b) / log(a) ? log(a) / log(b) : log(b) / log(a);
 double log10(double number) => log(number) / ln10;
 double linearToMel(double linear) => 2595 * log10(1 + linear / 700);
 
