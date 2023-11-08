@@ -81,10 +81,19 @@ class SpectogramPainer extends CustomPainter {
         canvas.drawRect(
           Rect.fromLTWH(x, yMel, chunkWidth, chunkItemHeightMel),
           Paint()
-            ..color = Color.lerp(
-                Colors.black, Colors.purpleAccent, log(data[i] + 1) / log(3))!
+            ..color = data[i] < 0.01
+                ? Colors.black
+                : data[i] < 0.1
+                    ? Colors.deepPurple
+                    : data[i] < 0.5
+                        ? Colors.pink
+                        : data[i] < 5
+                            ? Colors.orangeAccent
+                            : data[i] < 7
+                                ? Colors.yellow
+                                : Colors.white
+            //..maskFilter = MaskFilter.blur(BlurStyle.normal, 0.1 / data[i])
             ..isAntiAlias = true,
-          //..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
         );
       }
       chunkIndex++;
