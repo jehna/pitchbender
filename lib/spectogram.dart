@@ -55,12 +55,12 @@ class _SpectogramState extends State<Spectogram> {
           ? Stack(children: [
               CustomPaint(
                 painter: SpectogramPainer(wav: wav),
-                size: const Size(500, 300),
+                size: const Size(700, 400),
               ),
               CustomPaint(
                 painter: LinegramPainer(
                     wav: wav, threshold: logarihmicallyRisingValue),
-                size: const Size(500, 300),
+                size: const Size(700, 400),
               ),
             ])
           : const SizedBox()
@@ -150,20 +150,19 @@ class LinegramPainer extends CustomPainter {
 
     final hairs = pointsToHairs(points);
     for (final hair in hairs) {
-      final path = Path();
       if (hair.length == 1) continue;
-      path.moveTo(hair.first.x * chunkWidth,
-          log(hair.first.y) / log(41000) * size.height);
-      for (final point in hair) {
+
+      final points = hair.map((point) {
         final x = point.x * chunkWidth;
         final y =
-            log(point.y) / log(41000) * size.height + Random().nextDouble() * 0;
-        path.lineTo(x, y);
-      }
-      canvas.drawPath(
-        path,
+            log(point.y) / log(20000) * size.height + Random().nextDouble() * 0;
+        return Offset(x, y);
+      }).toList();
+      drawCatmullRomSpline(
+        canvas,
+        points,
         Paint()
-          ..color = Colors.white30
+          ..color = Colors.white10
           ..strokeWidth = 1
           ..style = PaintingStyle.stroke
           ..strokeCap = StrokeCap.round
@@ -254,4 +253,66 @@ Color lerpMultiple(List<Color> colors, double percent) {
   final index = (percent / step).floor();
   final percentRelative = (percent - index * step) / step;
   return Color.lerp(colors[index], colors[index + 1], percentRelative)!;
+}
+
+void drawCatmullRomSpline(Canvas canvas, List<Offset> points, Paint paint) {
+  /**
+   * Stolen from:
+   * https://github.com/mohamed-aly1/catmull_rom_spline_curve/blob/716fcf95ded746b063ca420d4b4f9b5b93aa9ebb/lib/catmull_rom_spline_curve.dart
+   * MIT license:
+   * https://github.com/mohamed-aly1/catmull_rom_spline_curve/blob/716fcf95ded746b063ca420d4b4f9b5b93aa9ebb/LICENSE
+   */
+  final path = Path();
+  const magic1 = 1.5;
+  const magic2 = 6.0;
+
+  for (int i = 0; i < points.length - 1; i++) {
+    Offset p1;
+    Offset p2;
+    Offset p3;
+
+    Offset p1Spline;
+    Offset p2Spline;
+    Offset p3Spline;
+    Offset p4Spline;
+    if (points.length < 3) {
+      p1 = points[i];
+      p2 = points[i + 1];
+      p3 = points[i];
+      p1Spline = p1;
+      p2Spline = p1;
+      p3Spline = p2;
+      p4Spline = p2;
+    } else if (i == 0) {
+      p1 = points[i];
+      p2 = points[i + 1];
+      p3 = points[i + 2];
+      p1Spline = p1;
+      p2Spline = p1 - ((p1 - p2) / magic1);
+      p3Spline = p2 - ((p3 - p1) / magic2);
+      p4Spline = p2;
+    } else if (i == points.length - 1) {
+      p1 = points[i - 1];
+      p2 = points[i];
+      p3 = points[i + 1];
+      p1Spline = p2;
+      p2Spline = p2 + ((p2 - p1) / magic1);
+      p3Spline = p3 - ((p3 - p2) / magic2);
+      p4Spline = p3;
+    } else {
+      p1 = points[i - 1];
+      p2 = points[i];
+      p3 = points[i + 1];
+      p1Spline = p2;
+      p2Spline = p2 + ((p2 - p1) / magic1);
+      p3Spline = p3 - ((p3 - p1) / magic2);
+      p4Spline = p3;
+    }
+
+    path.moveTo(p1Spline.dx, p1Spline.dy);
+    path.cubicTo(p2Spline.dx, p2Spline.dy, p3Spline.dx, p3Spline.dy,
+        p4Spline.dx, p4Spline.dy);
+
+    canvas.drawPath(path, paint);
+  }
 }
