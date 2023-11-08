@@ -1,0 +1,110 @@
+import 'dart:math';
+import 'dart:typed_data';
+import 'dart:ui';
+
+import 'package:fftea/stft.dart';
+import 'package:fftea/util.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:wav/wav_file.dart';
+
+class Spectogram extends StatefulWidget {
+  const Spectogram({super.key});
+
+  @override
+  State<Spectogram> createState() => _SpectogramState();
+}
+
+class _SpectogramState extends State<Spectogram> {
+  ValueNotifier<Float64List?> notifier = ValueNotifier(null);
+
+  @override
+  void initState() {
+    super.initState();
+    createSpectogram();
+  }
+
+  void createSpectogram() async {
+    notifier.value = await readAssetAsWav("assets/audios/sample.wav");
+  }
+
+  Future<Float64List> readAssetAsWav(String assetName) async {
+    final file = await rootBundle.load(assetName);
+    return Wav.read(file.buffer.asUint8List()).toMono();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: SpectogramPainer(notifier: notifier),
+      size: const Size(500, 300),
+    );
+  }
+}
+
+class SpectogramPainer extends CustomPainter {
+  Float64List? wav;
+  ValueNotifier<Float64List?> notifier;
+  SpectogramPainer({required this.notifier}) : super(repaint: notifier);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    this.wav = notifier.value;
+    final wav = this.wav;
+    if (wav == null) return;
+
+    // Mirror canvas horizontally
+    canvas.scale(1, -1);
+    canvas.translate(0, -size.height);
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      Paint()..color = Colors.black,
+    );
+
+    const chunkSize = 2048;
+    final stft = STFT(chunkSize, Window.hanning(chunkSize));
+    var chunkIndex = 0;
+    final chunkWidth = size.width / (wav.length / chunkSize);
+    stft.run(wav, (Float64x2List chunk) {
+      final data = chunk.discardConjugates().magnitudes();
+      final x = chunkIndex * chunkWidth;
+      final chunkItemHeight = data.length / size.height;
+      for (var i = 0; i < data.length; i++) {
+        final y = i / data.length * size.height;
+        final logY = log(i + 1) / log(data.length) * size.height;
+        final yMel = linearToMel(i.toDouble()) / data.length * size.height;
+        final chunkItemHeightLog =
+            log(i + 2) / log(data.length) * size.height - logY;
+        final chunkItemHeightMel =
+            linearToMel((i + 1).toDouble()) / data.length * size.height - yMel;
+        canvas.drawRect(
+          Rect.fromLTWH(x, yMel, chunkWidth, chunkItemHeightMel),
+          Paint()
+            ..color = Color.lerp(
+                Colors.black, Colors.purpleAccent, log(data[i] + 1) / log(3))!
+            ..isAntiAlias = true,
+          //..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
+        );
+      }
+      chunkIndex++;
+    });
+    print("chunkIndex $chunkIndex / ${wav.length / chunkSize}");
+  }
+
+  @override
+  bool shouldRepaint(SpectogramPainer oldDelegate) {
+    return wav != oldDelegate.wav;
+  }
+}
+
+double log10(double number) => log(number) / ln10;
+double linearToMel(double linear) => 2595 * log10(1 + linear / 700);
+
+Color lerpMultiple(List<Color> colors, double percent) {
+  percent = min(percent, 0.999999);
+  final step = 1 / (colors.length - 1);
+  final index = (percent / step).floor();
+  final percentRelative = (percent - index * step) / step;
+  return Color.lerp(colors[index], colors[index + 1], percentRelative)!;
+}
