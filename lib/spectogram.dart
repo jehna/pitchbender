@@ -1,10 +1,7 @@
 import 'dart:math';
 import 'dart:typed_data';
-import 'dart:ui';
-
 import 'package:fftea/stft.dart';
 import 'package:fftea/util.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:wav/wav_file.dart';
@@ -17,7 +14,7 @@ class Spectogram extends StatefulWidget {
 }
 
 class _SpectogramState extends State<Spectogram> {
-  ValueNotifier<Float64List?> notifier = ValueNotifier(null);
+  Float64List? wav;
 
   @override
   void initState() {
@@ -26,7 +23,10 @@ class _SpectogramState extends State<Spectogram> {
   }
 
   void createSpectogram() async {
-    notifier.value = await readAssetAsWav("assets/audios/sample.wav");
+    final wav = await readAssetAsWav("assets/audios/sample.wav");
+    setState(() {
+      this.wav = wav;
+    });
   }
 
   Future<Float64List> readAssetAsWav(String assetName) async {
@@ -36,24 +36,22 @@ class _SpectogramState extends State<Spectogram> {
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: SpectogramPainer(notifier: notifier),
-      size: const Size(500, 300),
-    );
+    final wav = this.wav;
+    return wav != null
+        ? CustomPaint(
+            painter: SpectogramPainer(wav: wav),
+            size: const Size(500, 300),
+          )
+        : const SizedBox();
   }
 }
 
 class SpectogramPainer extends CustomPainter {
-  Float64List? wav;
-  ValueNotifier<Float64List?> notifier;
-  SpectogramPainer({required this.notifier}) : super(repaint: notifier);
+  Float64List wav;
+  SpectogramPainer({required this.wav});
 
   @override
   void paint(Canvas canvas, Size size) {
-    this.wav = notifier.value;
-    final wav = this.wav;
-    if (wav == null) return;
-
     // Mirror canvas horizontally
     canvas.scale(1, -1);
     canvas.translate(0, -size.height);
@@ -98,7 +96,6 @@ class SpectogramPainer extends CustomPainter {
       }
       chunkIndex++;
     });
-    print("chunkIndex $chunkIndex / ${wav.length / chunkSize}");
   }
 
   @override
