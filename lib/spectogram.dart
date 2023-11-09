@@ -182,10 +182,20 @@ class LinegramPainer extends CustomPainter {
 List<int> groupByValues(Float64List data, double threshold) {
   final result = <int>[];
   var current = 0.0;
+  var last = 0;
   for (var i = 0; i < data.length; i++) {
     current += data[i];
     if (current > threshold) {
-      result.add(i);
+      final sum = data.sublist(last, i).reduce((a, b) => a + b);
+      var currentMedian = 0.0;
+      for (var j = last; j <= i; j++) {
+        currentMedian += data[j];
+        if (currentMedian > sum / 2) {
+          result.add(j);
+          last = j;
+          break;
+        }
+      }
       current -= threshold;
     }
     if (current > threshold) {
