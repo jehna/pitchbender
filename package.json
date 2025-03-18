@@ -7,7 +7,7 @@
   "devDependencies": {
     "@types/d3": "^7.4.3",
     "@types/react-dom": "^19.0.1",
-    "parcel": "^2.13.3",
+    "parcel": "^2.14.0",
     "process": "^0.11.10"
   },
   "dependencies": {
