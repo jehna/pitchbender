@@ -2100,10 +2100,10 @@ to-regex-range@^5.0.1:
   dependencies:
     is-number "^7.0.0"
 
-tone@^15.0.4:
-  version "15.0.4"
-  resolved "https://registry.yarnpkg.com/tone/-/tone-15.0.4.tgz#d98f76a5886c0fd7bff41c43399972ac088f1ee6"
-  integrity sha512-Fr2xATgdkNhzwMZhrU0DXpkXQyambq73hjHRrBiC0Wkc6aPYRdmkySE9kRFAW878zgMiD+Lqvn/uNHt/7hbdnQ==
+tone@^15.1.22:
+  version "15.1.22"
+  resolved "https://registry.yarnpkg.com/tone/-/tone-15.1.22.tgz#77581c7e8347a969872ca4f90f3532cd1e307dc8"
+  integrity sha512-TCScAGD4sLsama5DjvTUXlLDXSqPealhL64nsdV1hhr6frPWve0DeSo63AKnSJwgfg55fhvxj0iPPRwPN5o0ag==
   dependencies:
     standardized-audio-context "^25.3.70"
     tslib "^2.3.1"

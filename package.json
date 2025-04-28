@@ -15,7 +15,7 @@
     "pitchfinder": "^2.3.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "tone": "^15.0.4",
+    "tone": "^15.1.22",
     "typescript": "^5.8.3"
   },
   "scripts": {
