@@ -1114,10 +1114,10 @@
   resolved "https://registry.yarnpkg.com/@types/geojson/-/geojson-7946.0.12.tgz#0307536218d32e6b970bccd1d148b9c4e5b6f10d"
   integrity sha512-uK2z1ZHJyC0nQRbuovXFt4mzXDwf27vQeUWNhfKGwRcWW429GOhP8HxUHlM6TLH4bzmlv/HlEjpvJh3JfmGsAA==
 
-"@types/react-dom@^19.1.6":
-  version "19.1.6"
-  resolved "https://registry.yarnpkg.com/@types/react-dom/-/react-dom-19.1.6.tgz#4af629da0e9f9c0f506fc4d1caa610399c595d64"
-  integrity sha512-4hOiT/dwO8Ko0gV1m/TJZYk3y0KBnY9vzDh7W+DH17b2HFSOGgdj33dhihPeuy3l0q23+4e+hoXHV6hCC4dCXw==
+"@types/react-dom@^19.1.7":
+  version "19.1.7"
+  resolved "https://registry.yarnpkg.com/@types/react-dom/-/react-dom-19.1.7.tgz#2863f2aa89e023592b981204ef92c5221b286410"
+  integrity sha512-i5ZzwYpqjmrKenzkoLM2Ibzt6mAsM7pxB6BCIouEVVmgiqaMj1TjaK7hnA36hbW5aZv20kx7Lw6hWzPWg0Rurw==
 
 ansi-styles@^4.1.0:
   version "4.3.0"
