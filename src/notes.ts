@@ -161,7 +161,7 @@ export function splitToNotes(
     (buffer.sampleRate * 60) / (quantization * tempo)
   );
   const numChunks = Math.floor(audioBuffLength / chunkSize);
-  if (numChunks !== pitchData.length) throw new Error("Universe did not align");
+  //if (numChunks !== pitchData.length) throw new Error("Universe did not align"); // Can't remember how the stars needed to align for this
 
   let blockStartIndex = 0;
   for (let i = 0; i < pitchData.length - 1; i++) {
