@@ -130,43 +130,43 @@ const noteFreqs: Note[] = Object.entries(notes)
     return { note, frequency, freqFrom, freqTo };
   });
 
-/**
- * Converts a frequency to a note using mathematical formula.
- * Works for any frequency, not just the hardcoded ones.
- * Uses the formula: MIDI note = 69 + 12 * log2(f / 440)
- * where A4 = 440 Hz = MIDI note 69
- */
+const A4_FREQUENCY = 440;
+const A4_MIDI_NOTE = 69;
+const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+const frequencyToMidiNote = (freq: number): number =>
+  A4_MIDI_NOTE + 12 * Math.log2(freq / A4_FREQUENCY);
+
+const midiNoteToFrequency = (midiNote: number): number =>
+  A4_FREQUENCY * Math.pow(2, (midiNote - A4_MIDI_NOTE) / 12);
+
+const midiNoteToNoteName = (midiNote: number): string => {
+  const octave = Math.floor(midiNote / 12) - 1;
+  const noteName = NOTE_NAMES[midiNote % 12];
+  return `${noteName}${octave}`;
+};
+
+const calculateFrequencyBoundaries = (noteFrequency: number, midiNote: number) => {
+  const lowerNoteFreq = midiNoteToFrequency(midiNote - 1);
+  const upperNoteFreq = midiNoteToFrequency(midiNote + 1);
+  return {
+    freqFrom: Math.sqrt(lowerNoteFreq * noteFrequency),
+    freqTo: Math.sqrt(noteFrequency * upperNoteFreq)
+  };
+};
+
 export const freqToNote = (freq: number): Note => {
-  // Handle edge cases
   if (freq <= 0) {
     throw new Error("Frequency must be positive");
   }
 
-  // Calculate MIDI note number using the standard formula
-  // A4 (440 Hz) is MIDI note 69
-  const midiNote = 69 + 12 * Math.log2(freq / 440);
-
-  // Round to nearest semitone
+  const midiNote = frequencyToMidiNote(freq);
   const roundedMidiNote = Math.round(midiNote);
-
-  // Convert MIDI note to note name and octave
-  // MIDI note 0 = C-1, note 12 = C0, note 60 = C4, etc.
-  const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-  const octave = Math.floor(roundedMidiNote / 12) - 1;
-  const noteName = noteNames[roundedMidiNote % 12];
-  const noteKey = `${noteName}${octave}`;
-
-  // Calculate the exact frequency for this note
-  const noteFrequency = 440 * Math.pow(2, (roundedMidiNote - 69) / 12);
-
-  // Calculate frequency boundaries (logarithmic midpoint between adjacent notes)
-  const lowerNoteFreq = 440 * Math.pow(2, (roundedMidiNote - 1 - 69) / 12);
-  const upperNoteFreq = 440 * Math.pow(2, (roundedMidiNote + 1 - 69) / 12);
-  const freqFrom = Math.sqrt(lowerNoteFreq * noteFrequency);
-  const freqTo = Math.sqrt(noteFrequency * upperNoteFreq);
+  const noteFrequency = midiNoteToFrequency(roundedMidiNote);
+  const { freqFrom, freqTo } = calculateFrequencyBoundaries(noteFrequency, roundedMidiNote);
 
   return {
-    note: noteKey,
+    note: midiNoteToNoteName(roundedMidiNote),
     frequency: noteFrequency,
     freqFrom,
     freqTo
