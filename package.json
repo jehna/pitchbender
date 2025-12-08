@@ -20,7 +20,8 @@
   },
   "scripts": {
     "start": "parcel src/index.html",
-    "build": "parcel build  --public-url /pitchbender/"
+    "build": "parcel build  --public-url /pitchbender/",
+    "test": "npx tsx --test src/**/*.test.ts"
   },
   "alias": {
     "//": "https://github.com/parcel-bundler/parcel/issues/8792",

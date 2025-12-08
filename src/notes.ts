@@ -130,8 +130,48 @@ const noteFreqs: Note[] = Object.entries(notes)
     return { note, frequency, freqFrom, freqTo };
   });
 
-export const freqToNote = (freq: number) =>
-  noteFreqs.find(({ freqTo }) => freqTo >= freq)!;
+const A4_FREQUENCY = 440;
+const A4_MIDI_NOTE = 69;
+const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+const frequencyToMidiNote = (freq: number): number =>
+  A4_MIDI_NOTE + 12 * Math.log2(freq / A4_FREQUENCY);
+
+const midiNoteToFrequency = (midiNote: number): number =>
+  A4_FREQUENCY * Math.pow(2, (midiNote - A4_MIDI_NOTE) / 12);
+
+const midiNoteToNoteName = (midiNote: number): string => {
+  const octave = Math.floor(midiNote / 12) - 1;
+  const noteName = NOTE_NAMES[midiNote % 12];
+  return `${noteName}${octave}`;
+};
+
+const calculateFrequencyBoundaries = (noteFrequency: number, midiNote: number) => {
+  const lowerNoteFreq = midiNoteToFrequency(midiNote - 1);
+  const upperNoteFreq = midiNoteToFrequency(midiNote + 1);
+  return {
+    freqFrom: Math.sqrt(lowerNoteFreq * noteFrequency),
+    freqTo: Math.sqrt(noteFrequency * upperNoteFreq)
+  };
+};
+
+export const freqToNote = (freq: number): Note => {
+  if (freq <= 0) {
+    throw new Error("Frequency must be positive");
+  }
+
+  const midiNote = frequencyToMidiNote(freq);
+  const roundedMidiNote = Math.round(midiNote);
+  const noteFrequency = midiNoteToFrequency(roundedMidiNote);
+  const { freqFrom, freqTo } = calculateFrequencyBoundaries(noteFrequency, roundedMidiNote);
+
+  return {
+    note: midiNoteToNoteName(roundedMidiNote),
+    frequency: noteFrequency,
+    freqFrom,
+    freqTo
+  };
+};
 
 export const noteToFreq = (note: Key): number => notes[note];
 
