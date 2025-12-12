@@ -1744,10 +1744,10 @@ picomatch@^2.3.1:
   resolved "https://registry.yarnpkg.com/picomatch/-/picomatch-2.3.1.tgz#3ba3833733646d9d3e4995946c1365a67fb07a42"
   integrity sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA==
 
-pitchfinder@^2.3.2:
-  version "2.3.2"
-  resolved "https://registry.yarnpkg.com/pitchfinder/-/pitchfinder-2.3.2.tgz#80debb4e0328255e02ab33cee567fa21413879bc"
-  integrity sha512-Mn3jcp/y1xmAUKI1lMIU8bIqE9AcSuKMFuvJI9C/36oNwVklUF167o0TH/H5fwxuSIaz+XfBD6vd2G5lnddpzw==
+pitchfinder@^2.3.3:
+  version "2.3.3"
+  resolved "https://registry.yarnpkg.com/pitchfinder/-/pitchfinder-2.3.3.tgz#cda29a60ea3912c31735fb51789fe64f0b3bcbbb"
+  integrity sha512-9bX9MwPgHVl7EWjgu3Tdf+teWCrycgsRmOBfg0EXZ0AnZOMjH+2W/nmWvDR1RYvLPKZ1MvFhQhxqCYTTzlbY3w==
 
 postcss-value-parser@^4.2.0:
   version "4.2.0"
