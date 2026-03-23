@@ -16,7 +16,7 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "tone": "^15.1.22",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.2"
   },
   "scripts": {
     "start": "parcel src/index.html",
